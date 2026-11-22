@@ -24,13 +24,15 @@ jobs:
   data:
     if: github.event_name == 'schedule' || inputs.refresh_data
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/build-data.mjs
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
+      - run: curl -fsSL -o australia.osm.pbf https://download.geofabrik.de/australia-oceania/australia-latest.osm.pbf
+      - run: node scripts/build-data.mjs australia.osm.pbf
       - name: Save data on the "data" branch (one commit, so the repo does not grow every month)
         run: |
           cd data

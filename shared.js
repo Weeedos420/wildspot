@@ -42,6 +42,7 @@ export function parse(json) {
   for (const el of json.elements || []) {
     const t = el.tags || {}, cat = classify(t);
     if (!cat) continue;
+    if (cat === 'attraction' && !t.name) continue; // unnamed attractions are noise
     if (GROUP[cat] === 'services' && ['private', 'no', 'customers'].includes(t.access)) continue;
     const lat = el.lat ?? el.center?.lat, lon = el.lon ?? el.center?.lon;
     if (lat == null) continue;
