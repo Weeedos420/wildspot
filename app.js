@@ -1,5 +1,6 @@
 import * as db from './db.js';
 import { CELL, query as cellQuery, parse } from './shared.js';
+import { LANG, LOCALE, t, setLang, startTranslation } from './i18n.js';
 
 /* ---------------- config ---------------- */
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
@@ -77,8 +78,8 @@ const svg = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const nf1 = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
-const nf0 = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 });
+const nf1 = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });
+const nf0 = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 });
 function pref(k, d) { try { const v = localStorage.getItem('ws:' + k); return v ? JSON.parse(v) : d; } catch { return d; } }
 function savePref(k, v) { try { localStorage.setItem('ws:' + k, JSON.stringify(v)); } catch { /* private mode */ } }
 function distance(a, b) {
@@ -432,7 +433,7 @@ function spotHTML(sp) {
   </div>
   ${amen ? `<div class="amen">${amen}</div>` : ''}
   ${facts ? `<dl class="facts">${facts}</dl>` : ''}
-  ${t.description ? `<p class="desc">${esc(t.description)}</p>` : ''}
+  ${t.description ? `<p class="desc" translate="no">${esc(t.description)}</p>` : ''}
   <div class="section">
     <h3>La tua recensione</h3>
     ${starsHTML(u.rating || 0)}
@@ -476,7 +477,7 @@ function mineHTML(m) {
   </div>
   ${m.photos?.length ? `<div class="gallery">${m.photos.map(b => `<img src="${blobURL(b, 'sheet')}" data-act="view" alt="">`).join('')}</div>` : ''}
   ${m.rating ? `<div class="badges"><span class="badge" style="color:var(--gold)">${starsText(m.rating)}</span></div>` : ''}
-  ${m.note ? `<p class="desc">${esc(m.note).replace(/\n/g, '<br>')}</p>` : ''}
+  ${m.note ? `<p class="desc" translate="no">${esc(m.note).replace(/\n/g, '<br>')}</p>` : ''}
   <div class="actions">
     <button data-act="nav">${svg('nav')}<span>Indicazioni</span></button>
     <button data-act="share">${svg('share')}<span>Condividi</span></button>
@@ -484,7 +485,7 @@ function mineHTML(m) {
     <button data-act="delete-mine" class="danger">${svg('trash')}<span>Elimina</span></button>
   </div>
   <div class="coords"><span>${m.lat.toFixed(5)}, ${m.lon.toFixed(5)}</span><button data-act="copy">Copia</button>
-    <span>Aggiunto il ${new Date(m.ts).toLocaleDateString('it-IT')}</span></div>`;
+    <span>Aggiunto il ${new Date(m.ts).toLocaleDateString(LOCALE)}</span></div>`;
 }
 function openMine(id) {
   const m = S.mine.find(x => x.id === id);
@@ -571,7 +572,7 @@ const ACT = {
   },
   'edit-mine': () => { const m = S.ctx.sp; openForm({ ...m, photos: [...(m.photos || [])] }); },
   async 'delete-mine'() {
-    if (!confirm('Eliminare questo spot? Non si può annullare.')) return;
+    if (!confirm(t('Eliminare questo spot? Non si può annullare.'))) return;
     await db.del('mine', S.ctx.sp.id); await loadMine(); render(); closeSheet(); renderCurrentTab(); toast('Spot eliminato');
   },
   'use-gps'() {
@@ -667,13 +668,13 @@ async function renderOffline() {
   const au = $('#au-info'), btn = $('#au-download');
   if (S.idx) {
     const has = pref('auVersion', null) === S.idx.version;
-    au.innerHTML = `${nf0.format(S.idx.total)} campeggi, servizi e spot · circa ${nf0.format(S.idx.bytes / 1048576)} MB · aggiornati al ${new Date(S.idx.version).toLocaleDateString('it-IT')}`
+    au.innerHTML = `${nf0.format(S.idx.total)} campeggi, servizi e spot · circa ${nf0.format(S.idx.bytes / 1048576)} MB · aggiornati al ${new Date(S.idx.version).toLocaleDateString(LOCALE)}`
       + (has ? '<br><b style="color:var(--primary)">✓ Scaricati su questo dispositivo</b>' : '');
     btn.disabled = false; btn.textContent = has ? 'Aggiorna i dati' : 'Scarica i posti di tutta l\'Australia';
   } else { au.textContent = 'Dati non disponibili: apri l\'app con la connessione.'; btn.disabled = true; }
   const zones = (await db.all('zones')).sort((a, b) => b.ts - a.ts);
   $('#zone-list').innerHTML = zones.map(z => `<div class="item"><span class="ic" style="--c:#1f6f54">🗺️</span>
-    <span class="tx"><b>${esc(z.name)}</b><small>${nf0.format(z.tiles)} riquadri · ${new Date(z.ts).toLocaleDateString('it-IT')}</small></span>
+    <span class="tx"><b>${esc(z.name)}</b><small>${nf0.format(z.tiles)} riquadri · ${new Date(z.ts).toLocaleDateString(LOCALE)}</small></span>
     <button class="btn small" data-zone-go="${z.id}">Vai</button><button class="icon-btn" data-zone-del="${z.id}" aria-label="Elimina">${svg('trash')}</button></div>`).join('')
     || '<p class="muted small">Nessuna zona scaricata.</p>';
   try {
@@ -693,7 +694,7 @@ function showTab(name) {
 /* ---------------- offline zones ---------------- */
 async function placeName(lat, lon) {
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=it&lat=${lat}&lon=${lon}`, { signal: AbortSignal.timeout(5000) });
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=${LANG}&lat=${lat}&lon=${lon}`, { signal: AbortSignal.timeout(5000) });
     const a = (await r.json()).address || {};
     return a.town || a.city || a.village || a.municipality || a.county || a.state || null;
   } catch { return null; }
@@ -707,7 +708,7 @@ async function askDownload() {
   openSheet(`
     <div class="sp-head"><div class="sp-icon" style="--c:#1f6f54">🗺️</div><div class="sp-title"><h2>Scarica per l'offline</h2>
       <p>La zona visibile sulla mappa</p></div><button class="icon-btn" data-act="close" aria-label="Chiudi">${svg('x')}</button></div>
-    <label class="field"><span>Nome della zona</span><input id="dl-name" value="Zona del ${new Date().toLocaleDateString('it-IT')}"></label>
+    <label class="field"><span>Nome della zona</span><input id="dl-name" value="Zona del ${new Date().toLocaleDateString(LOCALE)}"></label>
     <p class="muted small">${nf0.format(urls.length)} riquadri di mappa (circa ${nf0.format(Math.max(1, urls.length * .03))} MB) e tutti i campeggi, servizi e spot della zona.</p>
     <div class="progress"><div id="dl-bar"></div></div><p id="dl-text" class="muted small"></p>
     <button class="btn primary block" id="dl-btn" data-act="dl-start">Scarica</button>`, { type: 'download', b, urls, cells });
@@ -749,7 +750,7 @@ async function runDownload() {
   renderCurrentTab();
 }
 async function deleteZone(id) {
-  if (!confirm('Eliminare questa zona offline?')) return;
+  if (!confirm(t('Eliminare questa zona offline?'))) return;
   const zones = await db.all('zones'), z = zones.find(x => x.id === id);
   if (!z) return;
   if (Object.keys(S.templates).length) {
@@ -837,7 +838,7 @@ async function searchPlaces(q) {
   if (!navigator.onLine) return showResults(localMatches(q), []);
   status('Cerco…', true);
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&accept-language=it&q=${encodeURIComponent(q)}`);
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&accept-language=${LANG}&q=${encodeURIComponent(q)}`);
     const res = await r.json();
     showResults(localMatches(q), res.map(p => ({ em: '📍', title: p.name || p.display_name.split(',')[0], sub: p.display_name, go: () => {
       const [s, n, w, e] = p.boundingbox.map(Number);
@@ -911,10 +912,12 @@ function wire() {
   }, 150));
   $('#search-form').addEventListener('submit', e => { e.preventDefault(); const q = input.value.trim(); if (q.length >= 2) searchPlaces(q); input.blur(); });
   $('#search-clear').addEventListener('click', () => { input.value = ''; $('#search-clear').classList.add('hidden'); hideResults(); });
+  $$('#lang-seg button').forEach(b => b.classList.toggle('on', b.dataset.v === LANG));
+  $('#lang-seg').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b && b.dataset.v !== LANG) setLang(b.dataset.v); });
   $('#off-export').addEventListener('click', exportBackup);
   $('#off-import').addEventListener('change', e => { if (e.target.files[0]) importBackup(e.target.files[0]); e.target.value = ''; });
   $('#off-clear').addEventListener('click', async () => {
-    if (!confirm('Eliminare tutte le mappe e i dati scaricati? Preferiti, recensioni e i tuoi spot restano.')) return;
+    if (!confirm(t('Eliminare tutte le mappe e i dati scaricati? Preferiti, recensioni e i tuoi spot restano.'))) return;
     await caches.delete(TILE_CACHE); tileCacheP = null;
     await db.clear('zones'); await db.clear('cells');
     S.spots.clear(); S.loaded.clear(); render(); renderOffline();
@@ -926,6 +929,7 @@ function wire() {
 }
 
 async function main() {
+  startTranslation();
   wire();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   await Promise.all([loadUser(), loadMine(), loadIndex()]);

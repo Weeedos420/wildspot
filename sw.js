@@ -1,7 +1,7 @@
 // Service worker: keeps the app shell and map assets available offline.
-const APP = 'wildspot-app-v1';
+const APP = 'wildspot-app-v2';
 const TILES = 'wildspot-tiles-v1'; // shared with app.js
-const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'db.js', 'shared.js', 'manifest.webmanifest',
+const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'db.js', 'shared.js', 'i18n.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
   'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js', 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'];
 
