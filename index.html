@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#1f6f54">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Wildspot">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="styles.css">
+<title>Wildspot</title>
+</head>
+<body>
+<div id="app">
+  <section id="view-map" class="view">
+    <div id="map"></div>
+    <div id="map-error" class="map-error hidden"></div>
+    <header class="topbar">
+      <form id="search-form" class="search glass" autocomplete="off">
+        <span data-icon="search"></span>
+        <input id="search" type="search" placeholder="Cerca un posto o una località" enterkeyhint="search">
+        <button type="button" id="search-clear" class="hidden" data-icon="x" aria-label="Cancella"></button>
+      </form>
+      <div id="search-results" class="search-results glass hidden"></div>
+      <div id="chips" class="chips"></div>
+      <div id="status" class="status glass hidden"></div>
+    </header>
+    <div class="fabs">
+      <button id="btn-locate" class="fab glass" data-icon="locate" aria-label="La mia posizione"></button>
+      <button id="btn-download" class="fab glass" data-icon="download" aria-label="Scarica zona offline"></button>
+    </div>
+    <button id="btn-add" class="fab-primary" data-icon="plus" aria-label="Aggiungi spot"></button>
+    <div class="crosshair"><span></span></div>
+    <div class="pick-bar glass">
+      <p>Sposta la mappa sul punto esatto</p>
+      <div class="row"><button class="btn" id="pick-cancel">Annulla</button><button class="btn primary" id="pick-ok">Usa questo punto</button></div>
+    </div>
+  </section>
+
+  <section id="view-near" class="view page">
+    <h1>Vicino a te</h1>
+    <p class="muted" id="near-sub"></p>
+    <div class="segmented" id="near-seg">
+      <button data-v="camps">Campeggi</button><button data-v="gems">Hidden gems</button><button data-v="services">Servizi</button>
+    </div>
+    <div id="near-list" class="list"></div>
+  </section>
+
+  <section id="view-saved" class="view page">
+    <h1>Salvati</h1>
+    <div class="segmented" id="saved-seg">
+      <button data-v="fav">Preferiti</button><button data-v="visited">Visitati</button><button data-v="reviewed">Recensiti</button>
+    </div>
+    <div id="saved-list" class="list"></div>
+  </section>
+
+  <section id="view-mine" class="view page">
+    <div class="page-head"><h1>I miei spot</h1><button class="btn primary small" id="mine-add">+ Nuovo</button></div>
+    <p class="muted">Posti segreti che trovi tu, con foto e note. Restano solo sul tuo iPhone.</p>
+    <div id="mine-list" class="list"></div>
+  </section>
+
+  <section id="view-offline" class="view page">
+    <h1>Offline</h1>
+    <div id="install-tip" class="card tip hidden"></div>
+    <div class="card">
+      <h3>🇦🇺 Posti di tutta l'Australia</h3>
+      <p class="muted small" id="au-info"></p>
+      <button class="btn primary block" id="au-download">Scarica i posti di tutta l'Australia</button>
+    </div>
+    <div class="card">
+      <h3>Mappe offline</h3>
+      <p class="muted small">La mappa dettagliata di tutto il continente pesa troppo per il telefono: prima di partire inquadra la zona del viaggio e tocca <b>Scarica</b>, così strade e sentieri si vedono anche senza segnale.</p>
+      <div id="zone-list" class="list compact"></div>
+      <button class="btn primary block" id="off-download">Scarica la zona visibile sulla mappa</button>
+    </div>
+    <div class="card">
+      <h3>Spazio usato</h3>
+      <p id="storage" class="muted"></p>
+      <button class="btn block danger-text" id="off-clear">Svuota mappe e dati scaricati</button>
+    </div>
+    <div class="card">
+      <h3>Backup</h3>
+      <p class="muted small">Preferiti, recensioni, foto e i tuoi spot in un unico file.</p>
+      <div class="row"><button class="btn" id="off-export">Esporta</button><label class="btn">Importa<input type="file" id="off-import" accept="application/json,.json" hidden></label></div>
+    </div>
+    <p class="credits">Dati dei luoghi © OpenStreetMap contributors · Mappe OpenFreeMap / OpenMapTiles</p>
+  </section>
+
+  <nav class="tabbar glass">
+    <button data-tab="map" class="active"><span data-icon="map"></span>Mappa</button>
+    <button data-tab="near"><span data-icon="compass"></span>Vicino</button>
+    <button data-tab="saved"><span data-icon="heart"></span>Salvati</button>
+    <button data-tab="mine"><span data-icon="pin"></span>Miei</button>
+    <button data-tab="offline"><span data-icon="cloud"></span>Offline</button>
+  </nav>
+
+  <div id="backdrop" class="backdrop"></div>
+  <div id="sheet" class="sheet"><div class="grabber"><span></span></div><div id="sheet-body" class="sheet-body"></div></div>
+  <div id="viewer" class="viewer hidden"><img alt=""></div>
+  <div id="toast" class="toast"></div>
+</div>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
